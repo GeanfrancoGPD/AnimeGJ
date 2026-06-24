@@ -3,7 +3,7 @@ import AppLayout from './components/layout/AppLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Catalog from './pages/Catalog';
-import Profile from './pages/Profile';
+import Profile from './pages/Profile/Profile';
 import AnimeDetail from './pages/AnimeDetail';
 
 function App() {

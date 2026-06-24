@@ -14,6 +14,8 @@ import {
   SimpleGrid,
   Image,
   Button,
+  TextInput,
+  Badge,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useDisclosure } from '@mantine/hooks';
@@ -269,9 +271,26 @@ function Profile() {
         </Tabs.Panel>
 
         <Tabs.Panel value="settings">
-          <Text c="dimmed" py="xl">
-            Cargando configuración...
-          </Text>
+          <Card withBorder shadow="sm" radius="md" p="lg" maw={480}>
+            <Stack gap="md">
+              <Group gap="xs">
+                <Text fw={500}>Account Settings</Text>
+                <Badge
+                  size="sm"
+                  variant="light"
+                  color={user.role === 'admin' ? 'yellow' : 'blue'}
+                >
+                  {user.role}
+                </Badge>
+              </Group>
+              <TextInput label="Nombre" value={user.name} readOnly />
+              <TextInput label="Email" value={user.email} readOnly />
+              <Text size="xs" c="dimmed">
+                Los cambios de perfil estarán disponibles cuando el backend
+                implemente el endpoint de actualización.
+              </Text>
+            </Stack>
+          </Card>
         </Tabs.Panel>
       </Tabs>
 

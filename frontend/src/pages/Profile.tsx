@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useReducer } from 'react';
 import {
   Container,
   Avatar,
@@ -10,37 +10,146 @@ import {
   Timeline,
   Progress,
   Box,
+  Card,
+  SimpleGrid,
+  Image,
+  Button,
 } from '@mantine/core';
-import type { User, WatchHistoryEntry } from '../types';
+import { notifications } from '@mantine/notifications';
+import { useDisclosure } from '@mantine/hooks';
+import type { User, WatchHistoryEntry, Favorite } from '../types';
 import { animeService } from '../services/animeService';
 import Loaders from '../components/shared/Loaders';
+import ConfirmModal from '../components/shared/ConfirmModal';
 import { formatDate } from '../utils/formateDate';
 
+interface ProfileState {
+  user: User | null;
+  history: WatchHistoryEntry[];
+  favorites: Favorite[];
+  loading: boolean;
+  removingId: number | null;
+  confirmAnimeId: number | null;
+}
+
+type ProfileAction =
+  | { type: 'LOAD_START' }
+  | {
+      type: 'LOAD_SUCCESS';
+      payload: {
+        user: User;
+        history: WatchHistoryEntry[];
+        favorites: Favorite[];
+      };
+    }
+  | { type: 'LOAD_ERROR' }
+  | { type: 'CONFIRM_REMOVE'; payload: number }
+  | { type: 'CANCEL_REMOVE' }
+  | { type: 'REMOVE_START'; payload: number }
+  | { type: 'REMOVE_SUCCESS'; payload: number }
+  | { type: 'REMOVE_ERROR' };
+
+const initialState: ProfileState = {
+  user: null,
+  history: [],
+  favorites: [],
+  loading: true,
+  removingId: null,
+  confirmAnimeId: null,
+};
+
+function profileReducer(
+  state: ProfileState,
+  action: ProfileAction,
+): ProfileState {
+  switch (action.type) {
+    case 'LOAD_START':
+      return { ...state, loading: true };
+    case 'LOAD_SUCCESS':
+      return {
+        ...state,
+        loading: false,
+        user: action.payload.user,
+        history: action.payload.history,
+        favorites: action.payload.favorites,
+      };
+    case 'LOAD_ERROR':
+      return { ...state, loading: false };
+    case 'CONFIRM_REMOVE':
+      return { ...state, confirmAnimeId: action.payload };
+    case 'CANCEL_REMOVE':
+      return { ...state, confirmAnimeId: null };
+    case 'REMOVE_START':
+      return { ...state, removingId: action.payload };
+    case 'REMOVE_SUCCESS':
+      return {
+        ...state,
+        favorites: state.favorites.filter((f) => f.animeId !== action.payload),
+        removingId: null,
+        confirmAnimeId: null,
+      };
+    case 'REMOVE_ERROR':
+      return { ...state, removingId: null };
+    default:
+      return state;
+  }
+}
+
 function Profile() {
-  const [user, setUser] = useState<User | null>(null);
-  const [history, setHistory] = useState<WatchHistoryEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [state, dispatch] = useReducer(profileReducer, initialState);
+  const [opened, { open, close }] = useDisclosure(false);
 
   useEffect(() => {
+    dispatch({ type: 'LOAD_START' });
     async function load() {
       try {
-        const [userData, historyData] = await Promise.all([
+        const [userData, historyData, favoritesData] = await Promise.all([
           animeService.getProfile(),
           animeService.getHistory(),
+          animeService.getFavorites(),
         ]);
-        setUser(userData);
-        setHistory(historyData);
-      } catch (error) {
-        console.error('Error loading profile or history:', error);
-      } finally {
-        setLoading(false);
+        dispatch({
+          type: 'LOAD_SUCCESS',
+          payload: {
+            user: userData,
+            history: historyData,
+            favorites: favoritesData,
+          },
+        });
+      } catch {
+        dispatch({ type: 'LOAD_ERROR' });
       }
     }
-
     load();
   }, []);
 
-  if (loading) {
+  async function handleRemoveFavorite(animeId: number) {
+    dispatch({ type: 'REMOVE_START', payload: animeId });
+    try {
+      await animeService.removeFavorite(animeId);
+      dispatch({ type: 'REMOVE_SUCCESS', payload: animeId });
+      close();
+      notifications.show({
+        title: 'Favorito eliminado',
+        message: 'El anime se eliminó de tu lista.',
+        color: 'green',
+      });
+    } catch {
+      dispatch({ type: 'REMOVE_ERROR' });
+      notifications.show({
+        title: 'Error',
+        message: 'No se pudo eliminar el favorito.',
+        color: 'red',
+      });
+    }
+  }
+
+  function openRemoveConfirm(animeId: number) {
+    dispatch({ type: 'CONFIRM_REMOVE', payload: animeId });
+    open();
+  }
+
+  if (state.loading) {
     return (
       <Container size="md" py="xl">
         <Loaders type="skeleton" lines={6} height={24} />
@@ -48,13 +157,15 @@ function Profile() {
     );
   }
 
-  if (!user) {
+  if (!state.user) {
     return (
       <Container size="md" py="xl">
         <Text c="dimmed">No se pudo cargar el perfil.</Text>
       </Container>
     );
   }
+
+  const { user, history, favorites, removingId, confirmAnimeId } = state;
 
   return (
     <Container size="md" py="xl">
@@ -118,9 +229,43 @@ function Profile() {
         </Tabs.Panel>
 
         <Tabs.Panel value="favorites">
-          <Text c="dimmed" py="xl">
-            Cargando favoritos...
-          </Text>
+          {favorites.length === 0 ? (
+            <Text c="dimmed" py="xl">
+              No tienes animes favoritos aún.
+            </Text>
+          ) : (
+            <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
+              {favorites.map((fav) => (
+                <Card key={fav.id} shadow="sm" radius="md" withBorder>
+                  <Card.Section>
+                    <Image
+                      src={fav.imageUrl}
+                      alt={fav.title}
+                      height={160}
+                      fallbackSrc="https://placehold.co/300x160/2e303a/9ca3af?text=Sin+imagen"
+                    />
+                  </Card.Section>
+                  <Stack gap={4} mt="sm" mb="xs">
+                    <Text fw={500} lineClamp={2}>
+                      {fav.title}
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      Agregado el {formatDate(fav.addedAt)}
+                    </Text>
+                  </Stack>
+                  <Button
+                    variant="light"
+                    color="red"
+                    size="xs"
+                    fullWidth
+                    onClick={() => openRemoveConfirm(fav.animeId)}
+                  >
+                    Quitar
+                  </Button>
+                </Card>
+              ))}
+            </SimpleGrid>
+          )}
         </Tabs.Panel>
 
         <Tabs.Panel value="settings">
@@ -129,6 +274,20 @@ function Profile() {
           </Text>
         </Tabs.Panel>
       </Tabs>
+
+      <ConfirmModal
+        opened={opened}
+        onClose={() => {
+          close();
+          dispatch({ type: 'CANCEL_REMOVE' });
+        }}
+        onConfirm={() => confirmAnimeId && handleRemoveFavorite(confirmAnimeId)}
+        title="Quitar favorito"
+        message="¿Estás seguro de que deseas eliminar este anime de tu lista de favoritos?"
+        confirmLabel="Eliminar"
+        color="red"
+        loading={removingId !== null}
+      />
     </Container>
   );
 }

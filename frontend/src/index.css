@@ -1,3 +1,90 @@
+/* ===== AnimeVerse – Global Styles ===== */
+
+/* ---------- Reset & Base ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ---------- Custom Scrollbar ---------- */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, 0.25);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 58, 237, 0.45);
+}
+
+/* ---------- Mantine AppShell overrides ---------- */
+
+/* Quitar bottom-border del header por defecto en dark mode */
+[data-mantine-color-scheme='dark'] .mantine-AppShell-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+[data-mantine-color-scheme='light'] .mantine-AppShell-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Footer visual separator */
+.app-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+[data-mantine-color-scheme='light'] .app-footer {
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* ---------- Nav link active indicator ---------- */
+.nav-link-active {
+  position: relative;
+}
+
+.nav-link-active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--mantine-color-violet-5);
+  border-radius: 1px;
+}
+
+/* ---------- Auth pages background ---------- */
+.auth-wrapper {
+  min-height: calc(100vh - 60px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- Smooth transitions ---------- */
+.mantine-AppShell-main,
+.mantine-Paper-root,
+.mantine-Card-root {
+  transition: background-color 0.2s ease;
 }

@@ -133,5 +133,24 @@ export default function useProfileReducer() {
     load();
   }, []);
 
-  return { state, dispatch };
+  const { user, history, favorites, loading, removingId, confirmAnimeId } = state;
+
+  function closeConfirm() {
+    close();
+    dispatch({ type: 'CANCEL_REMOVE' });
+  }
+
+  return {
+    state,
+    user,
+    history,
+    favorites,
+    loading,
+    removingId,
+    confirmAnimeId,
+    opened,
+    closeConfirm,
+    handleRemoveFavorite,
+    openRemoveConfirm,
+  };
 }

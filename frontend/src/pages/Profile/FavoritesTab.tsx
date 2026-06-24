@@ -13,13 +13,11 @@ import { formatDate } from '../../utils/formateDate';
 interface HistoryTabProps {
   favorites: Favorite[];
   onRemove: (animeId: number) => void;
-  removingId: number | null;
 }
 
 export default function FavoritesTab({
   favorites,
   onRemove,
-  removingId,
 }: HistoryTabProps) {
   return (
     <Tabs.Panel value="favorites">

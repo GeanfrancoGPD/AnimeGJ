@@ -1,0 +1,139 @@
+{
+    "getUsers": {
+        "query": "SELECT id, nombre, gmail AS gmail, avatar, created_at, updated_at FROM usuarios ORDER BY id",
+        "structure_params": {},
+        "orderArray": []
+    },
+    "getUser": {
+        "query": "SELECT id, nombre, gmail AS gmail, password, avatar FROM usuarios WHERE gmail = $1",
+        "structure_params": {
+            "gmail": "string"
+        },
+        "orderArray": ["gmail"]
+    },
+    "getUserById": {
+        "query": "SELECT id, nombre, gmail AS gmail, avatar FROM usuarios WHERE id = $1",
+        "structure_params": {
+            "id": "number"
+        },
+        "orderArray": ["id"]
+    },
+    "createUser": {
+        "query": "INSERT INTO usuarios (nombre, gmail, password) VALUES ($1, $2, $3) RETURNING id, nombre, gmail AS email, avatar",
+        "structure_params": {
+            "nombre": "string",
+            "gmail": "string",
+            "password": "string"
+        },
+        "orderArray": ["nombre", "gmail", "password"]
+    },
+    "updateUser": {
+        "query": "UPDATE usuarios SET nombre = $1, gmail = $2, password = $3 WHERE id = $4 RETURNING id, nombre, gmail AS email, avatar",
+        "structure_params": {
+            "nombre": "string",
+            "gmail": "string",
+            "password": "string",
+            "id": "number"
+        },
+        "orderArray": ["nombre", "gmail", "password", "id"]
+    },
+    "updateUserProfile": {
+        "query": "UPDATE usuarios SET nombre = $1, gmail = $2 WHERE id = $3 RETURNING id, nombre, gmail AS email, avatar",
+        "structure_params": {
+            "nombre": "string",
+            "gmail": "string",
+            "id": "number"
+        },
+        "orderArray": ["nombre", "gmail", "id"]
+    },
+    "updatePassword": {
+        "query": "UPDATE usuarios SET password = $1 WHERE id = $2 RETURNING id",
+        "structure_params": {
+            "password": "string",
+            "id": "number"
+        },
+        "orderArray": ["password", "id"]
+    },
+    "deleteUser": {
+        "query": "DELETE FROM usuarios WHERE id = $1 RETURNING id, nombre, gmail AS email",
+        "structure_params": {
+            "id": "number"
+        },
+        "orderArray": ["id"]
+    },
+    "getAnimeAll": {
+        "query": "SELECT * FROM animes ORDER BY id",
+        "structure_params": {},
+        "orderArray": []
+    },
+    "genres": {
+        "query": "SELECT * FROM genres ORDER BY id",
+        "structure_params": {},
+        "orderArray": []
+    },
+    "createGenre": {
+        "query": "INSERT INTO genres (mal_id, name) VALUES ($1, $2) RETURNING id, mal_id, name",
+        "structure_params": {
+            "mal_id": "number",
+            "name": "string"
+        },
+        "orderArray": ["mal_id", "name"]
+    },
+    "createAnime": {
+        "query": "INSERT INTO animes (mal_id, title, title_english, title_japanese, type, episodes, status, aired_from, aired_to, duration, rating, score, scored_by, rank, popularity, members, synopsis, image_url, trailer_url, season, year) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21) ON CONFLICT (mal_id) DO UPDATE SET score = EXCLUDED.score, image_url = EXCLUDED.image_url, trailer_url = EXCLUDED.trailer_url, season = EXCLUDED.season, year = EXCLUDED.year RETURNING id, mal_id, title, score, image_url, season, year, trailer_url",
+        "structure_params": {
+            "mal_id": "number",
+            "title": "string",
+            "title_english": "string",
+            "title_japanese": "string",
+            "type": "string",
+            "episodes": "number",
+            "status": "string",
+            "aired_from": "string",
+            "aired_to": "string",
+            "duration": "string",
+            "rating": "string",
+            "score": "number",
+            "scored_by": "number",
+            "rank": "number",
+            "popularity": "number",
+            "members": "number",
+            "synopsis": "string",
+            "image_url": "string",
+            "trailer_url": "string",
+            "season": "string",
+            "year": "number"
+        },
+        "orderArray": [
+            "mal_id",
+            "title",
+            "title_english",
+            "title_japanese",
+            "type",
+            "episodes",
+            "status",
+            "aired_from",
+            "aired_to",
+            "duration",
+            "rating",
+            "score",
+            "scored_by",
+            "rank",
+            "popularity",
+            "members",
+            "synopsis",
+            "image_url",
+            "trailer_url",
+            "season",
+            "year"
+        ]
+    },
+    "saveAnimeGenreRelation": {
+        "query": "INSERT INTO anime_genre (anime_id, genre_id) VALUES ($1, $2) RETURNING id",
+        "structure_params": {
+            "anime_id": "number",
+            "genre_id": "number"
+        },
+        "orderArray": ["anime_id", "genre_id"]
+    }
+}

@@ -111,8 +111,6 @@ export default class AnimeBO {
 
         const hashedPassword = await this.bcrypt.hash(password);
 
-        console.log("datos", nombre, gmail, hashedPassword);
-
         await this.repository.createUser(nombre, gmail, hashedPassword);
 
         return res.status(201).json({

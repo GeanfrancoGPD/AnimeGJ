@@ -1,4 +1,5 @@
 import { useEffect, useReducer } from 'react';
+import { notifications } from '@mantine/notifications';
 import type { Anime, Episode, Comment } from '../types';
 import { animeService } from '../services/animeService';
 
@@ -135,12 +136,27 @@ export default function useAnimeDetail(id: number) {
       if (state.isFavorited) {
         await animeService.removeFavorite(anime.id);
         dispatch({ type: 'TOGGLE_FAVORITE_SUCCESS', payload: false });
+        notifications.show({
+          title: 'Favorito eliminado',
+          message: 'El anime se eliminó de tu lista.',
+          color: 'green',
+        });
       } else {
         await animeService.addFavorite(anime.id, anime.title, anime.imageUrl);
         dispatch({ type: 'TOGGLE_FAVORITE_SUCCESS', payload: true });
+        notifications.show({
+          title: 'Favorito agregado',
+          message: 'El anime se agregó a tu lista.',
+          color: 'green',
+        });
       }
     } catch {
       dispatch({ type: 'TOGGLE_FAVORITE_ERROR' });
+      notifications.show({
+        title: 'Error',
+        message: 'No se pudo actualizar la lista de favoritos.',
+        color: 'red',
+      });
     }
   }
 
@@ -153,8 +169,18 @@ export default function useAnimeDetail(id: number) {
         state.newComment.trim(),
       );
       dispatch({ type: 'SUBMIT_COMMENT_SUCCESS', payload: comment });
+      notifications.show({
+        title: 'Comentario publicado',
+        message: 'Tu comentario se agregó correctamente.',
+        color: 'green',
+      });
     } catch {
       dispatch({ type: 'SUBMIT_COMMENT_ERROR' });
+      notifications.show({
+        title: 'Error',
+        message: 'No se pudo publicar el comentario.',
+        color: 'red',
+      });
     }
   }
 

@@ -21,7 +21,6 @@ export default class AnimeBO {
 
     async login(req, res) {
         const { gmail, password } = req.body;
-
         if (!gmail || !password) {
             return res.status(400).json({
                 success: false,
@@ -111,6 +110,8 @@ export default class AnimeBO {
         }
 
         const hashedPassword = await this.bcrypt.hash(password);
+
+        console.log("datos", nombre, gmail, hashedPassword);
 
         await this.repository.createUser(nombre, gmail, hashedPassword);
 
@@ -219,13 +220,68 @@ export default class AnimeBO {
         }
 
         try {
-            const anime = await this.repository.getAnimeById(id);
+            let anime = await this.repository.getAnimeById(id);
 
             if (!anime.length) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Anime no encontrado",
-                });
+                anime = await this.apiRepository.getAnimeById(id);
+
+                if (!anime) {
+                    return res.status(404).json({
+                        success: false,
+                        message: "Anime no encontrado en la API",
+                    });
+                }
+
+                const mappedData = {
+                    mal_id: anime.mal_id,
+                    title: anime.title,
+                    title_english: anime.title_english || null,
+                    title_japanese: anime.title_japanese || null,
+                    type: anime.type || null,
+                    episodes: anime.episodes || null,
+                    status: anime.status || null,
+                    aired_from: anime.aired?.from
+                        ? anime.aired.from.split("T")[0]
+                        : null,
+                    aired_to: anime.aired?.to
+                        ? anime.aired.to.split("T")[0]
+                        : null,
+                    duration: anime.duration || null,
+                    rating: anime.rating || null,
+                    score: anime.score || 0,
+                    scored_by: anime.scored_by || 0,
+                    rank: anime.rank || 0,
+                    popularity: anime.popularity || 0,
+                    members: anime.members || 0,
+                    synopsis: anime.synopsis || null,
+                    image_url:
+                        anime.images?.jpg?.large_image_url ||
+                        anime.images?.jpg?.image_url ||
+                        null,
+
+                    // Ajuste Proactivo para el Trailer: si la URL principal es null, guardamos el embed_url
+                    trailer_url:
+                        anime.trailer?.url || anime.trailer?.embed_url || null,
+
+                    // NUEVOS CAMPOS: Mapeo explícito de temporada y año
+                    season: anime.season || null,
+                    year: anime.year || null,
+                };
+
+                const dbResult = await this.repository.createAnime(mappedData);
+
+                if (dbResult) {
+                    return res.status(200).json({
+                        success: true,
+                        data: {
+                            id: dbResult.id,
+                            malId: dbResult.mal_id,
+                            title: dbResult.title,
+                            score: parseFloat(dbResult.score || 0),
+                            imageUrl: dbResult.image_url,
+                        },
+                    });
+                }
             }
 
             return res.status(200).json({ success: true, data: anime[0] });

@@ -157,4 +157,13 @@ export default class AnimeApiRepository {
             );
         }
     }
+
+    async getAnimeById(id) {
+        try {
+            const response = await this.api.get(`/anime/${id}`);
+            return response.data?.data || null;
+        } catch (error) {
+            throw new Error(`Error al obtener anime por ID: ${error.message}`);
+        }
+    }
 }

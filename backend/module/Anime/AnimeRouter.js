@@ -57,4 +57,9 @@ router.get("/all", async (req, res) => {
 router.get("/genres", async (req, res) => {
     return await animeBO.getGenres(req, res);
 });
+
+router.get("/:id", async (req, res) => {
+    return await animeBO.getAnimeById(req, res);
+});
+
 export default router;

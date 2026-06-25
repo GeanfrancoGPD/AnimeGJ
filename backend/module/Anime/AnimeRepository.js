@@ -6,12 +6,43 @@ export default class AnimeRepository {
         this.db.init();
     }
 
+    //Users
+    async getUserByEmail(gmail) {
+        console.log("gmail:", gmail);
+
+        let respuesta = await this.db.executeNameQuery("getUserByEmail", {
+            gmail,
+        });
+        console.log("Respuesta:", respuesta);
+        return respuesta;
+    }
+
+    async createUser(nombre, gmail, passwordHash) {
+        console.log("DATA=====", { nombre, gmail, passwordHash });
+
+        return await this.db.executeNameQuery("createUser", {
+            nombre,
+            gmail,
+            password: passwordHash,
+        });
+    }
+
+    async deleteUserAccount(id) {
+        return await this.db.executeNameQuery("deleteUserAccount", { id });
+    }
+
+    async getAllUsers() {
+        return await this.db.executeNameQuery("getAllUsers");
+    }
+
+    //Animes
+
     async getAnimeAll() {
         return await this.db.executeNameQuery("getAnimeAll");
     }
 
     async getAnimeById(id) {
-        return await this.db.executeNameQuery("getAnimeById", { id });
+        return await this.db.executeNameQuery("getAnimeById", { mal_id: id });
     }
 
     async createAnime(animeData) {

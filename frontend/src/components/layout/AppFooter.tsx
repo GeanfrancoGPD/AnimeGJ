@@ -19,7 +19,7 @@ import { Link } from 'react-router-dom';
 /* ─── Columnas del footer ─── */
 const navigationLinks = [
   { label: 'Home', path: '/' },
-  { label: 'Catalog', path: '/' },
+  { label: 'Catalog', path: '/catalog' },
   { label: 'My List', path: '/profile' },
   { label: 'Seasonal', path: '/' },
 ];

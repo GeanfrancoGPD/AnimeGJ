@@ -1,123 +1,144 @@
-import type {
-  User,
-  Anime,
-  Episode,
-  Comment,
-  Favorite,
-  WatchHistoryEntry,
-  PaginatedResponse,
-} from '../types';
-import { mockApi } from './mockData';
+import type { Anime, User, Episode, Comment, Favorite, PaginatedResponse } from '../types';
 
-// This variable controls whether to use mock data or real API calls.
-// Set it to false to use the real API.
-const USE_MOCK = true;
+const JIKAN_URL = 'https://api.jikan.moe/v4';
 
-function buildUrl(path: string): string {
-  return `${import.meta.env.VITE_API_URL ?? 'http://localhost:3001'}${path}`;
-}
-
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(buildUrl(path), {
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: 'Error de red' }));
-    throw new Error(error.message ?? `HTTP ${res.status}`);
-  }
-
+async function jikanFetch<T>(path: string): Promise<T> {
+  const res = await fetch(`${JIKAN_URL}${path}`);
+  if (!res.ok) throw new Error(`Jikan API error: ${res.status}`);
   return res.json();
 }
 
+function mapJikanAnime(item: any): Anime {
+  return {
+    id: item.mal_id,
+    malId: item.mal_id,
+    title: item.title,
+    titleEnglish: item.title_english ?? undefined,
+    titleJapanese: item.title_japanese ?? undefined,
+    synopsis: item.synopsis ?? undefined,
+    type: item.type ?? undefined,
+    source: item.source ?? undefined,
+    episodes: item.episodes ?? undefined,
+    status: item.status ?? undefined,
+    airing: item.airing ?? false,
+    airedFrom: item.aired?.from?.split('T')[0] ?? undefined,
+    airedTo: item.aired?.to?.split('T')[0] ?? undefined,
+    duration: item.duration ?? undefined,
+    rating: item.rating ?? undefined,
+    score: item.score ?? undefined,
+    scoredBy: item.scored_by ?? undefined,
+    rank: item.rank ?? undefined,
+    popularity: item.popularity ?? undefined,
+    members: item.members ?? undefined,
+    season: item.season ?? undefined,
+    year: item.year ?? undefined,
+    imageUrl: item.images?.jpg?.large_image_url ?? item.images?.jpg?.image_url ?? undefined,
+    trailerUrl: item.trailer?.url ?? item.trailer?.embed_url ?? undefined,
+    genres: (item.genres ?? []).map((g: any) => g.name),
+  };
+}
+
 export const animeService = {
-  async getProfile(): Promise<User> {
-    if (USE_MOCK) return mockApi.getProfile();
-
-    const getData = await fetch(buildUrl('/api/auth/me'));
-    const data = await getData.json();
-
-    return data.user as User;
-  },
-
-  async getAnimes(
-    page?: number,
-    filters?: { genre?: string; year?: number; type?: string },
-  ): Promise<PaginatedResponse<Anime>> {
-    if (USE_MOCK) return await mockApi.getAnimes(page, filters);
-
+  async getAnimes(page = 1, filters?: { genre?: string; year?: number; type?: string }): Promise<PaginatedResponse<Anime>> {
     const params = new URLSearchParams();
-    if (page) params.set('page', String(page));
-    if (filters?.genre) params.set('genre', filters.genre);
+    params.set('page', String(page));
+    params.set('limit', '25');
+    if (filters?.genre) params.set('genres', filters.genre);
     if (filters?.year) params.set('year', String(filters.year));
     if (filters?.type) params.set('type', filters.type);
 
-    return await request<PaginatedResponse<Anime>>(
-      `/api/animes?${params.toString()}`,
-    );
+    const json = await jikanFetch<any>(`/anime?${params.toString()}`);
+    const results = (json.data ?? []).map(mapJikanAnime);
+    const totalPages = json.pagination?.last_visible_page ?? 1;
+    return { page, totalPages, results };
+  },
+
+  async searchAnimes(query: string, page = 1): Promise<PaginatedResponse<Anime>> {
+    const json = await jikanFetch<any>(`/anime?q=${encodeURIComponent(query)}&page=${page}&limit=25`);
+    const results = (json.data ?? []).map(mapJikanAnime);
+    const totalPages = json.pagination?.last_visible_page ?? 1;
+    return { page, totalPages, results };
   },
 
   async getAnimeById(id: number): Promise<Anime | null> {
-    if (USE_MOCK) return await mockApi.getAnimeById(id);
-    return await request<Anime>(`/api/animes/${id}`);
+    try {
+      const json = await jikanFetch<any>(`/anime/${id}/full`);
+      return mapJikanAnime(json.data);
+    } catch {
+      return null;
+    }
+  },
+
+  async getGenres(): Promise<{ malId: number; name: string }[]> {
+    const json = await jikanFetch<any>('/genres/anime');
+    return (json.data ?? []).map((g: any) => ({ malId: g.mal_id, name: g.name }));
   },
 
   async getEpisodes(animeId: number): Promise<Episode[]> {
-    if (USE_MOCK) return await mockApi.getEpisodes(animeId);
-    return await request<Episode[]>(`/api/animes/${animeId}/episodes`);
+    try {
+      const json = await jikanFetch<any>(`/anime/${animeId}/episodes`);
+      return (json.data ?? []).map((e: any) => ({
+        id: e.mal_id,
+        malId: e.mal_id,
+        animeId,
+        number: e.number ?? 0,
+        title: e.title ?? undefined,
+        aired: e.aired ?? undefined,
+        filler: e.filler ?? false,
+        recap: e.recap ?? false,
+        duration: e.duration ?? undefined,
+      }));
+    } catch {
+      return [];
+    }
   },
 
-  async getComments(animeId: number): Promise<Comment[]> {
-    if (USE_MOCK) return await mockApi.getComments(animeId);
-    return await request<Comment[]>(`/api/animes/${animeId}/comments`);
+  // Mock auth — no backend
+  async login(_email: string, _password: string): Promise<User> {
+    await new Promise((r) => setTimeout(r, 800));
+    return { id: 1, name: 'Usuario', email: _email, role: 'user', createdAt: new Date().toISOString() };
   },
 
-  async addComment(animeId: number, content: string): Promise<Comment> {
-    if (USE_MOCK) return await mockApi.addComment(animeId, content);
-    return await request<Comment>('/api/comments', {
-      method: 'POST',
-      body: JSON.stringify({ animeId, content }),
-    });
+  async register(_name: string, _email: string, _password: string): Promise<{ message: string }> {
+    await new Promise((r) => setTimeout(r, 800));
+    return { message: 'Usuario registrado correctamente' };
   },
 
-  async deleteComment(commentId: number): Promise<{ message: string }> {
-    if (USE_MOCK) return await mockApi.deleteComment(commentId);
-    return await request<{ message: string }>(`/api/comments/${commentId}`, {
-      method: 'DELETE',
-    });
+  async logout(): Promise<void> {
+    localStorage.removeItem('animegj_user');
+  },
+
+  async getProfile(): Promise<User> {
+    const stored = localStorage.getItem('animegj_user');
+    if (stored) return JSON.parse(stored);
+    throw new Error('No hay sesión activa');
+  },
+
+  async getComments(_animeId: number): Promise<Comment[]> {
+    return [];
+  },
+
+  async addComment(_animeId: number, _content: string): Promise<Comment> {
+    throw new Error('Not implemented');
+  },
+
+  async deleteComment(_commentId: number): Promise<{ message: string }> {
+    throw new Error('Not implemented');
   },
 
   async getFavorites(): Promise<Favorite[]> {
-    if (USE_MOCK) return await mockApi.getFavorites();
-    return await request<Favorite[]>('/api/favorites');
+    return [];
   },
 
-  async addFavorite(
-    animeId: number,
-    animeTitle: string,
-    animeImage?: string,
-  ): Promise<Favorite> {
-    if (USE_MOCK) {
-      return await mockApi.addFavorite(animeId, animeTitle, animeImage);
-    }
-
-    return await request<Favorite>('/api/favorites', {
-      method: 'POST',
-      body: JSON.stringify({ animeId }),
-    });
+  async addFavorite(_animeId: number, _animeTitle: string, _animeImage?: string): Promise<Favorite> {
+    throw new Error('Not implemented');
   },
 
-  async removeFavorite(animeId: number): Promise<{ message: string }> {
-    if (USE_MOCK) return await mockApi.removeFavorite(animeId);
-    return await request<{ message: string }>(`/api/favorites/${animeId}`, {
-      method: 'DELETE',
-    });
+  async removeFavorite(_animeId: number): Promise<{ message: string }> {
+    throw new Error('Not implemented');
   },
 
-  async getHistory(): Promise<WatchHistoryEntry[]> {
-    if (USE_MOCK) return await mockApi.getHistory();
-    return await request<WatchHistoryEntry[]>('/api/history');
+  async getHistory(): Promise<any[]> {
+    return [];
   },
 };

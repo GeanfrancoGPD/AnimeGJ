@@ -1,3 +1,4 @@
+import { useState, useRef } from 'react';
 import {
   Group,
   Text,
@@ -10,6 +11,10 @@ import {
   useMantineColorScheme,
   rem,
   Indicator,
+  Popover,
+  Stack,
+  Badge,
+  CloseButton,
 } from '@mantine/core';
 import {
   IconSearch,
@@ -21,16 +26,15 @@ import {
   IconSettings,
   IconClock,
 } from '@tabler/icons-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useAnimeData } from '../../context/AnimeDataContext';
 
-/* ─── Navegación principal ─── */
 const mainLinks = [
   { label: 'Home', path: '/' },
-  { label: 'Catalog', path: '/' },
-  { label: 'My List', path: '/profile' },
+  { label: 'Catalogo', path: '/catalog' },
+  { label: 'Mi lista', path: '/profile' },
 ];
 
-/* ─── Props ─── */
 interface AppHeaderProps {
   burgerOpened: boolean;
   onBurgerClick: () => void;
@@ -41,20 +45,61 @@ export default function AppHeader({
   onBurgerClick,
 }: AppHeaderProps) {
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
   const navigate = useNavigate();
   const location = useLocation();
+  const [, setSearchParams] = useSearchParams();
+  const { animes } = useAnimeData();
+  const [headerSearch, setHeaderSearch] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  /** Determina si un link está activo */
   function isActive(path: string, label: string): boolean {
     if (label === 'Home' && location.pathname === '/') return true;
-    if (label === 'Catalog' && location.pathname === '/') return false; // Home tiene prioridad
-    if (label === 'My List' && location.pathname === '/profile') return true;
-    return location.pathname === path && label !== 'Home';
+    if (label === 'Catalogo' && location.pathname === '/catalog') return true;
+    if (label === 'Mi lista' && location.pathname === '/profile') return true;
+    return location.pathname === path;
   }
+
+  const searchResults = headerSearch.trim()
+    ? animes
+        .filter(
+          (a) =>
+            a.title.toLowerCase().includes(headerSearch.toLowerCase()) ||
+            (a.titleEnglish?.toLowerCase() ?? '').includes(headerSearch.toLowerCase()),
+        )
+        .slice(0, 6)
+    : [];
+
+  function clearSearch() {
+    setHeaderSearch('');
+    inputRef.current?.focus();
+    if (location.pathname === '/catalog') {
+      setSearchParams({});
+    }
+  }
+
+  function selectAnime(id: number) {
+    setHeaderSearch('');
+    setShowDropdown(false);
+    navigate(`/anime/${id}`);
+  }
+
+  function searchCatalog() {
+    if (headerSearch.trim()) {
+      if (location.pathname === '/catalog') {
+        setSearchParams({ search: headerSearch.trim() });
+      } else {
+        navigate(`/catalog?search=${encodeURIComponent(headerSearch.trim())}`);
+      }
+      setShowDropdown(false);
+    }
+  }
+
+  const borderColor = isDark ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-gray-3)';
 
   return (
     <Group h="100%" px="md" justify="space-between" wrap="nowrap">
-      {/* ─── Lado izquierdo: Burger (mobile) + Logo + Nav Links ─── */}
       <Group gap="lg" wrap="nowrap">
         <Burger
           opened={burgerOpened}
@@ -64,7 +109,6 @@ export default function AppHeader({
           aria-label="Toggle navigation"
         />
 
-        {/* Logo */}
         <Text
           fw={800}
           size="xl"
@@ -79,7 +123,6 @@ export default function AppHeader({
           AnimeVerse
         </Text>
 
-        {/* Nav links (desktop) */}
         <Group gap={rem(4)} visibleFrom="sm" wrap="nowrap">
           {mainLinks.map((link) => {
             const active = isActive(link.path, link.label);
@@ -93,7 +136,7 @@ export default function AppHeader({
                   fontSize: rem(14),
                   fontWeight: active ? 600 : 400,
                   color: active
-                    ? 'var(--mantine-color-white)'
+                    ? 'var(--mantine-color-red)'
                     : 'var(--mantine-color-dimmed)',
                   position: 'relative',
                   whiteSpace: 'nowrap',
@@ -106,35 +149,126 @@ export default function AppHeader({
         </Group>
       </Group>
 
-      {/* ─── Lado derecho: Search + Iconos + Avatar ─── */}
       <Group gap="sm" wrap="nowrap">
-        {/* Search */}
-        <TextInput
-          placeholder="Search anime..."
-          leftSection={<IconSearch size={16} stroke={1.5} />}
-          visibleFrom="md"
-          size="sm"
-          radius="md"
-          style={{ width: rem(200) }}
-          styles={{
-            input: {
-              backgroundColor:
-                colorScheme === 'dark'
-                  ? 'var(--mantine-color-dark-6)'
-                  : 'var(--mantine-color-gray-1)',
-              border: `1px solid ${
-                colorScheme === 'dark'
-                  ? 'var(--mantine-color-dark-4)'
-                  : 'var(--mantine-color-gray-3)'
-              }`,
-              '&:focus': {
-                borderColor: 'var(--mantine-color-violet-5)',
-              },
-            },
-          }}
-        />
+        <Popover
+          opened={showDropdown && searchResults.length > 0}
+          onClose={() => setShowDropdown(false)}
+          width={320}
+          position="bottom-end"
+          shadow="lg"
+          withArrow
+          offset={4}
+        >
+          <Popover.Target>
+            <TextInput
+              ref={inputRef}
+              placeholder="Buscar anime..."
+              leftSection={<IconSearch size={16} stroke={1.5} />}
+              rightSection={
+                headerSearch ? (
+                  <CloseButton size="sm" onClick={clearSearch} />
+                ) : null
+              }
+              visibleFrom="md"
+              size="sm"
+              radius="md"
+              value={headerSearch}
+              onChange={(e) => {
+                const val = e.currentTarget.value;
+                setHeaderSearch(val);
+                if (val.trim()) setShowDropdown(true);
+                else setShowDropdown(false);
+                if (location.pathname === '/catalog') {
+                  if (val.trim()) {
+                    setSearchParams({ search: val.trim() });
+                  } else {
+                    setSearchParams({});
+                  }
+                }
+              }}
+              onFocus={() => { if (headerSearch.trim()) setShowDropdown(true); }}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  searchCatalog();
+                }
+              }}
+              style={{ width: rem(220) }}
+              styles={{
+                input: {
+                  backgroundColor: isDark ? 'var(--mantine-color-dark-6)' : 'var(--mantine-color-gray-1)',
+                  border: `1px solid ${borderColor}`,
+                  '&:focus': {
+                    borderColor: 'var(--mantine-color-violet-5)',
+                  },
+                },
+              }}
+            />
+          </Popover.Target>
 
-        {/* Notificaciones */}
+          <Popover.Dropdown
+            p={0}
+            style={{
+              backgroundColor: isDark ? 'var(--mantine-color-dark-6)' : 'var(--mantine-color-white)',
+              border: `1px solid ${borderColor}`,
+              overflow: 'hidden',
+            }}
+          >
+            <Stack gap={0}>
+              {searchResults.map((anime) => (
+                <UnstyledButton
+                  key={anime.id}
+                  onClick={() => selectAnime(anime.id)}
+                  style={{
+                    display: 'flex',
+                    gap: 8,
+                    padding: '10px 14px',
+                    alignItems: 'center',
+                    width: '100%',
+                    transition: 'background 0.15s',
+                  }}
+                  styles={{
+                    root: {
+                      '&:hover': {
+                        backgroundColor: isDark ? 'var(--mantine-color-dark-5)' : 'var(--mantine-color-gray-1)',
+                      },
+                      '&:not(:last-child)': {
+                        borderBottom: `1px solid ${borderColor}`,
+                      },
+                    },
+                  }}
+                >
+                  <Text size="sm" fw={500} style={{ flex: 1 }}>
+                    {anime.titleEnglish ?? anime.title}
+                  </Text>
+                  <Badge size="xs" variant="light" color="violet" style={{ flexShrink: 0 }}>
+                    {anime.type}
+                  </Badge>
+                </UnstyledButton>
+              ))}
+              <UnstyledButton
+                onClick={searchCatalog}
+                style={{
+                  padding: '10px 12px',
+                  textAlign: 'center',
+                  borderTop: `1px solid ${borderColor}`,
+                }}
+                styles={{
+                  root: {
+                    '&:hover': {
+                      backgroundColor: isDark ? 'var(--mantine-color-dark-5)' : 'var(--mantine-color-gray-1)',
+                    },
+                  },
+                }}
+              >
+                <Text size="sm" c="violet.5" fw={500}>
+                  Ver todos los resultados en Catálogo &rarr;
+                </Text>
+              </UnstyledButton>
+            </Stack>
+          </Popover.Dropdown>
+        </Popover>
+
         <Indicator
           color="violet"
           size={8}
@@ -152,7 +286,6 @@ export default function AppHeader({
           </ActionIcon>
         </Indicator>
 
-        {/* Historial / Reloj */}
         <ActionIcon
           variant="subtle"
           color="gray"
@@ -164,7 +297,6 @@ export default function AppHeader({
           <IconClock size={20} stroke={1.5} />
         </ActionIcon>
 
-        {/* Toggle Dark/Light */}
         <ActionIcon
           variant="subtle"
           color="gray"
@@ -179,7 +311,6 @@ export default function AppHeader({
           )}
         </ActionIcon>
 
-        {/* Avatar con menú */}
         <Menu
           shadow="lg"
           width={200}

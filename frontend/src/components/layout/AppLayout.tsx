@@ -15,7 +15,7 @@ import AppBreadcrumbs from './AppBreadcrumbs';
 /* ─── Links del Sidebar (solo visible en mobile) ─── */
 const sidebarLinks = [
   { label: 'Home', icon: IconHome, path: '/' },
-  { label: 'Catalog', icon: IconLayoutGrid, path: '/' },
+  { label: 'Catalog', icon: IconLayoutGrid, path: '/catalog' },
   { label: 'My List', icon: IconHeart, path: '/profile' },
 ];
 

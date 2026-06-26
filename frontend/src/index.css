@@ -88,3 +88,14 @@ a {
 .mantine-Card-root {
   transition: background-color 0.2s ease;
 }
+
+/* ---------- Hero animations ---------- */
+@keyframes heroFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes heroContentUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}

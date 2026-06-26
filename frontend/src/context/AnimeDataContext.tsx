@@ -18,35 +18,23 @@ export function AnimeDataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
-    async function fetchAll() {
+    async function load() {
       try {
-        const all: Anime[] = [];
-        for (let page = 1; page <= 4; page++) {
-          const res = await animeService.getAnimes(page);
-          if (cancelled) return;
-          all.push(...res.results);
-          if (res.results.length < 25) break;
-          await new Promise((r) => setTimeout(r, 1200));
-        }
-        if (!cancelled) {
-          setAnimes(all);
-        }
+        const [page1, genreData] = await Promise.all([
+          animeService.getAnimes(1),
+          animeService.getGenres(),
+        ]);
+        if (cancelled) return;
+        setAnimes(page1.results);
+        setGenres(genreData);
       } catch (err) {
-        console.error('Error fetching animes:', err);
+        console.error('Error fetching data:', err);
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
 
-    async function fetchGenres() {
-      try {
-        const g = await animeService.getGenres();
-        if (!cancelled) setGenres(g);
-      } catch {}
-    }
-
-    fetchAll();
-    fetchGenres();
+    load();
     return () => { cancelled = true; };
   }, []);
 

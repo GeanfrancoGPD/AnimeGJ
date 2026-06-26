@@ -26,7 +26,7 @@ export function AnimeDataProvider({ children }: { children: ReactNode }) {
           if (cancelled) return;
           all.push(...res.results);
           if (res.results.length < 25) break;
-          await new Promise((r) => setTimeout(r, 400));
+          await new Promise((r) => setTimeout(r, 1200));
         }
         if (!cancelled) {
           setAnimes(all);

@@ -29,6 +29,8 @@ export default function HeroCarousel({ animes }: HeroCarouselProps) {
   const [heroIndex, setHeroIndex] = useState(0);
   const [fadeKey, setFadeKey] = useState(0);
 
+  if (!animes.length) return null;
+
   const hero = animes[heroIndex];
 
   const next = useCallback(() => {

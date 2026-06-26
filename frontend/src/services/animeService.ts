@@ -3,9 +3,18 @@ import type { Anime, User, Episode, Comment, Favorite, PaginatedResponse } from 
 const JIKAN_URL = 'https://api.jikan.moe/v4';
 
 async function jikanFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${JIKAN_URL}${path}`);
-  if (!res.ok) throw new Error(`Jikan API error: ${res.status}`);
-  return res.json();
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await fetch(`${JIKAN_URL}${path}`);
+    if (res.ok) return res.json();
+    if (res.status === 429) {
+      const wait = 1000 * (attempt + 1);
+      console.warn(`Jikan rate limited, retrying in ${wait}ms...`);
+      await new Promise((r) => setTimeout(r, wait));
+      continue;
+    }
+    throw new Error(`Jikan API error: ${res.status}`);
+  }
+  throw new Error('Jikan API rate limit exceeded after 3 retries');
 }
 
 function mapJikanAnime(item: any): Anime {

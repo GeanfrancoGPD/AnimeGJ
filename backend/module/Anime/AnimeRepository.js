@@ -26,11 +26,11 @@ export default class AnimeRepository {
   }
 
   async deleteUserAccount(id) {
-    return await this.db.executeNameQuery("deleteUserAccount", { id });
+    return await this.db.executeNameQuery("deleteUser", { id });
   }
 
   async getAllUsers() {
-    return await this.db.executeNameQuery("getAllUsers");
+    return await this.db.executeNameQuery("getUsers");
   }
 
   //Animes
@@ -130,6 +130,28 @@ export default class AnimeRepository {
   async getFavoriteAnimesByUser(usuarioId) {
     return await this.db.executeNameQuery("getFavoriteAnimesByUser", {
       usuario_id: usuarioId,
+    });
+  }
+
+  async addComment(usuarioId, animeId, comentario) {
+    return await this.db.executeNameQuery("addComment", {
+      usuario_id: usuarioId,
+      anime_id: animeId,
+      comentario: comentario,
+    });
+  }
+
+  async getCommentsByAnime(animeId) {
+    return await this.db.executeNameQuery("getCommentsByAnime", {
+      anime_id: animeId,
+    });
+  }
+
+  async removeComment(usuarioId, animeId, commentId) {
+    return await this.db.executeNameQuery("removeComment", {
+      usuario_id: usuarioId,
+      anime_id: animeId,
+      comment_id: commentId,
     });
   }
 }

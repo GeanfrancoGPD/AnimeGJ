@@ -20,34 +20,11 @@ router.post("/logout", async (req, res) => {
 });
 
 router.delete("/user", authMiddleware, async (req, res) => {
-  try {
-    const usuarioId = req.body.id ?? resolveUserId(req);
-
-    if (!usuarioId) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Usuario inválido" });
-    }
-    const data = await recipeRepository.deleteUserAccount(usuarioId);
-    req.session.destroy(() => {});
-    return res.json({ success: true, data });
-  } catch (error) {
-    return res
-      .status(500)
-      .json({ success: false, message: "No se pudo eliminar la cuenta" });
-  }
+  await animeBO.deleteUserAccount(req, res);
 });
 
 router.get("/users", async (req, res) => {
-  try {
-    const data = await recipeRepository.getAllUsers();
-    return res.json({ success: true, data: data ?? [] });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "No se pudieron cargar los usuarios",
-    });
-  }
+  await animeBO.getAllUsers(req, res);
 });
 
 router.get("/auth/me", authMiddleware, async (req, res) => {

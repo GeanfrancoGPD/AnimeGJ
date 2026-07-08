@@ -15,6 +15,13 @@ export default class AnimeBO {
 
   // Auth
 
+  async resolveUserId(req) {
+    if (req.session && req.session.user && req.session.user.id) {
+      return req.session.user.id;
+    }
+    return null;
+  }
+
   getValidationMessage(validation) {
     return validation?.error?.issues?.[0]?.message || "Dato inválido";
   }
@@ -142,6 +149,36 @@ export default class AnimeBO {
     });
   }
 
+  async deleteUserAccount(req, res) {
+    try {
+      const usuarioId = req.body.id ?? (await this.resolveUserId(req));
+
+      if (!usuarioId) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Usuario inválido" });
+      }
+      const data = await this.repository.deleteUserAccount(usuarioId);
+      req.session.destroy(() => {});
+      return res.json({ success: true, data });
+    } catch (error) {
+      return res
+        .status(500)
+        .json({ success: false, message: "No se pudo eliminar la cuenta" });
+    }
+  }
+
+  async getAllUsers(req, res) {
+    try {
+      const data = await this.repository.getAllUsers();
+      return res.json({ success: true, data: data ?? [] });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "No se pudieron cargar los usuarios",
+      });
+    }
+  }
   // Anime
 
   async getAnimeAll(req, res) {
@@ -438,6 +475,86 @@ export default class AnimeBO {
       });
     } catch (error) {
       console.error("Error al eliminar favorito:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Error interno del servidor",
+      });
+    }
+  }
+
+  async addComment(req, res) {
+    const { mal_id, comment } = req.body;
+    const userId = req.session.user.id;
+
+    if (!mal_id || !comment) {
+      return res.status(400).json({
+        success: false,
+        message: "MAL ID y comentario son requeridos",
+      });
+    }
+
+    try {
+      await this.repository.addComment(userId, mal_id, comment);
+
+      return res.status(201).json({
+        success: true,
+        message: "Comentario agregado exitosamente",
+      });
+    } catch (error) {
+      console.error("Error al agregar comentario:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Error interno del servidor",
+      });
+    }
+  }
+
+  async removeComment(req, res) {
+    const { mal_id, comment_id } = req.body;
+    const userId = req.session.user.id;
+
+    if (!mal_id || !comment_id) {
+      return res.status(400).json({
+        success: false,
+        message: "MAL ID y ID de comentario son requeridos",
+      });
+    }
+
+    try {
+      await this.repository.removeComment(userId, mal_id, comment_id);
+
+      return res.status(200).json({
+        success: true,
+        message: "Comentario eliminado exitosamente",
+      });
+    } catch (error) {
+      console.error("Error al eliminar comentario:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Error interno del servidor",
+      });
+    }
+  }
+
+  async getComments(req, res) {
+    const { mal_id } = req.params;
+
+    if (!mal_id) {
+      return res.status(400).json({
+        success: false,
+        message: "MAL ID es requerido",
+      });
+    }
+
+    try {
+      const comments = await this.repository.getCommentsByAnime(mal_id);
+
+      return res.status(200).json({
+        success: true,
+        data: comments,
+      });
+    } catch (error) {
+      console.error("Error al obtener comentarios:", error);
       return res.status(500).json({
         success: false,
         message: "Error interno del servidor",

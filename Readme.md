@@ -588,7 +588,15 @@ Internamente: `SELECT ... FROM favorites WHERE user_id = req.session.userId`.
 
 ## Obtener comentarios
 
-### GET /api/animes/:id/comments
+### GET /api/animes/comments
+
+### body params
+
+```js
+{
+  "animeId": 1,
+}
+```
 
 Internamente: `JOIN comments c ON c.user_id = users.id WHERE c.anime_id = :id`.
 

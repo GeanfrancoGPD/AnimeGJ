@@ -23,15 +23,15 @@ class Session {
   }
 
   sessionExist(sessionObject) {
-    const exists = sessionObject.request.session.user ? true : false;
-    console.log("Verificando sesión:", exists ? "EXISTE" : "NO EXISTE");
-    if (exists) {
-      console.log("Usuario en sesión:", sessionObject.request.session.user);
+    const user = sessionObject.request.session.user;
+
+    if (user) {
+      console.log("Usuario en sesión:", user);
+      return user; // Devuelve el objeto del usuario
     } else {
       console.log("No hay usuario en la sesión");
-      console.log("Session object:", sessionObject.request.session);
+      return null; // Devuelve null si no hay nada
     }
-    return exists;
   }
 
   destroySession(sessionObject) {

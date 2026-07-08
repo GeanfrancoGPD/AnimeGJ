@@ -347,7 +347,7 @@ Destruye la sesión en el servidor (`req.session.destroy()`) y limpia la cookie.
 
 ## Obtener todos los animes
 
-### GET /api/animes
+### GET /api/animes/all
 
 ### Body Params
 
@@ -430,64 +430,6 @@ Destruye la sesión en el servidor (`req.session.destroy()`) y limpia la cookie.
 
 ---
 
-## Crear Anime
-
-> Recomendado restringir con un middleware que chequee `req.session.role === "admin"`.
-
-### POST /api/animes
-
-### Request
-
-```json
-{
-  "malId": 52299,
-  "title": "Solo Leveling",
-  "synopsis": "Historia...",
-  "releaseYear": 2024,
-  "status": "Ongoing",
-  "score": 9.4,
-  "genres": ["Action", "Fantasy"]
-}
-```
-
-### Response
-
-```json
-{
-  "message": "Anime creado correctamente"
-}
-```
-
----
-
-## Actualizar Anime
-
-### PUT /api/animes/:id
-
-### Response
-
-```json
-{
-  "message": "Anime actualizado"
-}
-```
-
----
-
-## Eliminar Anime
-
-### DELETE /api/animes/:id
-
-### Response
-
-```json
-{
-  "message": "Anime eliminado"
-}
-```
-
----
-
 # Episodios
 
 ## Obtener episodios
@@ -497,34 +439,22 @@ Destruye la sesión en el servidor (`req.session.destroy()`) y limpia la cookie.
 ### Response
 
 ```json
-[
-  {
-    "id": 1,
-    "malId": 1,
-    "number": 1,
-    "title": "El despertar",
-    "aired": "2024-01-06",
-    "filler": false,
-    "recap": false,
-    "duration": 1440
-  }
-]
-```
-
----
-
-## Crear episodio
-
-### POST /api/episodes
-
-### Request
-
-```json
 {
-  "animeId": 1,
-  "number": 1,
-  "title": "El despertar",
-  "duration": 24
+  "success": true,
+  "data": [
+    {
+      "mal_id": 1,
+      "url": "https://myanimelist.net/anime/20/Naruto/episode/1",
+      "title": "Enter: Naruto Uzumaki!",
+      "title_japanese": "参上！うずまきナルト",
+      "title_romanji": "Sanjou! Uzumaki Naruto ",
+      "aired": "2002-10-03T00:00:00+00:00",
+      "score": 4.13,
+      "filler": false,
+      "recap": false,
+      "forum_url": "https://myanimelist.net/forum/?topicid=99623"
+    }
+  ]
 }
 ```
 

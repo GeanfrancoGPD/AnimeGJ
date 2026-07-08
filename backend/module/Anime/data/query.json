@@ -184,5 +184,36 @@
       "recap",
       "duration"
     ]
+  },
+  "getFavoriteByUserAndAnime": {
+    "query": "SELECT * FROM favorites WHERE user_id = $1 AND anime_id = $2",
+    "structure_params": {
+      "user_id": "number",
+      "anime_id": "number"
+    },
+    "orderArray": ["user_id", "anime_id"]
+  },
+  "addFavorite": {
+    "query": "INSERT INTO favorites (user_id, anime_id) VALUES ($1, $2) RETURNING id, user_id, anime_id",
+    "structure_params": {
+      "user_id": "number",
+      "anime_id": "number"
+    },
+    "orderArray": ["user_id", "anime_id"]
+  },
+  "removeFavorite": {
+    "query": "DELETE FROM favorites WHERE user_id = $1 AND anime_id = $2 RETURNING id, user_id, anime_id",
+    "structure_params": {
+      "user_id": "number",
+      "anime_id": "number"
+    },
+    "orderArray": ["user_id", "anime_id"]
+  },
+  "getFavoriteAnimesByUser": {
+    "query": "SELECT a.* FROM animes a JOIN favorites f ON a.mal_id = f.anime_id WHERE f.user_id = $1",
+    "structure_params": {
+      "user_id": "number"
+    },
+    "orderArray": ["user_id"]
   }
 }

@@ -342,4 +342,106 @@ export default class AnimeBO {
       year: anime.year || null,
     };
   }
+
+  async getFavoriteAnimes(req, res) {
+    const userId = req.session.user.id;
+
+    try {
+      const favoriteAnimes =
+        await this.repository.getFavoriteAnimesByUser(userId);
+
+      return res.status(200).json({
+        success: true,
+        data: favoriteAnimes,
+      });
+    } catch (error) {
+      console.error("Error al obtener animes favoritos:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Error interno del servidor",
+      });
+    }
+  }
+
+  async addFavorite(req, res) {
+    const { mal_id } = req.body;
+    const userId = req.session.user.id;
+
+    if (!mal_id) {
+      return res.status(400).json({
+        success: false,
+        message: "MAL ID es requerido",
+      });
+    }
+
+    try {
+      // Verificamos si el anime ya está en favoritos
+      const existingFavorite = await this.repository.getFavoriteByUserAndAnime(
+        userId,
+        mal_id,
+      );
+
+      if (existingFavorite.length > 0) {
+        return res.status(409).json({
+          success: false,
+          message: "El anime ya está en favoritos",
+        });
+      }
+
+      // Agregamos a favoritos
+      await this.repository.addFavorite(userId, mal_id);
+
+      return res.status(201).json({
+        success: true,
+        message: "Anime agregado a favoritos",
+      });
+    } catch (error) {
+      console.error("Error al agregar favorito:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Error interno del servidor",
+      });
+    }
+  }
+
+  async removeFavorite(req, res) {
+    const { mal_id } = req.body;
+    const userId = req.session.user.id;
+
+    if (!mal_id) {
+      return res.status(400).json({
+        success: false,
+        message: "MAL ID es requerido",
+      });
+    }
+
+    try {
+      // Verificamos si el anime está en favoritos
+      const existingFavorite = await this.repository.getFavoriteByUserAndAnime(
+        userId,
+        mal_id,
+      );
+
+      if (existingFavorite.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "El anime no está en favoritos",
+        });
+      }
+
+      // Eliminamos de favoritos
+      await this.repository.removeFavorite(userId, mal_id);
+
+      return res.status(200).json({
+        success: true,
+        message: "Anime eliminado de favoritos",
+      });
+    } catch (error) {
+      console.error("Error al eliminar favorito:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Error interno del servidor",
+      });
+    }
+  }
 }

@@ -105,4 +105,31 @@ export default class AnimeRepository {
       await this.db.executeNameQuery("createEpisode", episodeData);
     }
   }
+  // Favoritos
+  async getFavoriteByUserAndAnime(usuarioId, animeId) {
+    return await this.db.executeNameQuery("getFavoriteByUserAndAnime", {
+      usuario_id: usuarioId,
+      anime_id: animeId,
+    });
+  }
+
+  async addFavorite(usuarioId, animeId) {
+    return await this.db.executeNameQuery("addFavorite", {
+      usuario_id: usuarioId,
+      anime_id: animeId,
+    });
+  }
+
+  async removeFavorite(usuarioId, animeId) {
+    return await this.db.executeNameQuery("removeFavorite", {
+      usuario_id: usuarioId,
+      anime_id: animeId,
+    });
+  }
+
+  async getFavoriteAnimesByUser(usuarioId) {
+    return await this.db.executeNameQuery("getFavoriteAnimesByUser", {
+      usuario_id: usuarioId,
+    });
+  }
 }

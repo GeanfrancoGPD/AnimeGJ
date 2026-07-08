@@ -74,4 +74,28 @@ router.get("/:id/episodes", async (req, res) => {
   return await animeBO.getEpisodeDetails(req, res);
 });
 
+router.post("/favorito", authMiddleware, async (req, res) => {
+  return await animeBO.addFavorite(req, res);
+});
+
+router.delete("/favorito", authMiddleware, async (req, res) => {
+  return await animeBO.removeFavorite(req, res);
+});
+
+router.get("/favoritos", authMiddleware, async (req, res) => {
+  return await animeBO.getFavoriteAnimes(req, res);
+});
+
+router.post("/comentarios", authMiddleware, async (req, res) => {
+  return await animeBO.addComment(req, res);
+});
+
+router.delete("/comentarios", authMiddleware, async (req, res) => {
+  return await animeBO.removeComment(req, res);
+});
+
+router.get("/comentarios", authMiddleware, async (req, res) => {
+  return await animeBO.getComments(req, res);
+});
+
 export default router;

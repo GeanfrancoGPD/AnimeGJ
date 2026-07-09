@@ -6,7 +6,7 @@ import Register from './pages/Register';
 import Home from './pages/Home';
 import Catalog from './pages/Catalog';
 import Profile from './pages/Profile/Profile';
-import AnimeDetail from './pages/AnimeDetail';
+import AnimeDetail from './pages/AnimeDetail/AnimeDetail';
 
 function App() {
   return (

@@ -347,7 +347,7 @@ Destruye la sesión en el servidor (`req.session.destroy()`) y limpia la cookie.
 
 ## Obtener todos los animes
 
-### GET /api/animes
+### GET /api/animes/all
 
 ### Body Params
 
@@ -365,15 +365,35 @@ Destruye la sesión en el servidor (`req.session.destroy()`) y limpia la cookie.
 
 ```json
 {
-  "page": 1,
-  "totalPages": 5,
-  "results": [
+  "success": true,
+  "data": [
     {
       "id": 1,
-      "malId": 52299,
-      "title": "Solo Leveling",
-      "score": 9.4,
-      "imageUrl": "image.jpg"
+      "mal_id": 64467,
+      "title": "Sudachi no Maoujou",
+      "title_english": null,
+      "title_japanese": "すだち de la Maoujou",
+      "synopsis": "After the hero defeated the demon lord...",
+      "type": "TV",
+      "source": "Manga",
+      "episodes": null,
+      "status": "Not yet aired",
+      "airing": false,
+      "aired_from": "2027-01-01T04:00:00.000Z",
+      "aired_to": null,
+      "duration": "Unknown",
+      "rating": null,
+      "score": "0.00",
+      "scored_by": 0,
+      "rank": 0,
+      "popularity": 0,
+      "members": 1,
+      "season": "winter",
+      "year": 2027,
+      "image_url": "https://cdn.myanimelist.net/images/anime/1934/158698l.jpg",
+      "trailer_url": null,
+      "created_at": "2026-06-25T20:12:38.210Z",
+      "updated_at": "2026-06-25T20:12:38.210Z"
     }
   ]
 }
@@ -390,79 +410,21 @@ Destruye la sesión en el servidor (`req.session.destroy()`) y limpia la cookie.
 ```json
 {
   "id": 1,
-  "malId": 52299,
+  "mal_id": 52299,
   "title": "Solo Leveling",
-  "titleEnglish": "Solo Leveling",
-  "titleJapanese": "俺だけレベルアップな件",
+  "title_english": "Solo Leveling",
+  "title_japanese": "俺だけレベルアップな件",
   "synopsis": "Historia...",
   "type": "TV",
   "episodes": 12,
   "status": "Finished Airing",
-  "airedFrom": "2024-01-06",
-  "airedTo": "2024-03-23",
+  "aired_from": "2024-01-06",
+  "aired_to": "2024-03-23",
   "score": 9.4,
   "season": "winter",
   "year": 2024,
-  "imageUrl": "image.jpg",
+  "image_url": "image.jpg",
   "genres": ["Action", "Fantasy"]
-}
-```
-
----
-
-## Crear Anime
-
-> Recomendado restringir con un middleware que chequee `req.session.role === "admin"`.
-
-### POST /api/animes
-
-### Request
-
-```json
-{
-  "malId": 52299,
-  "title": "Solo Leveling",
-  "synopsis": "Historia...",
-  "releaseYear": 2024,
-  "status": "Ongoing",
-  "score": 9.4,
-  "genres": ["Action", "Fantasy"]
-}
-```
-
-### Response
-
-```json
-{
-  "message": "Anime creado correctamente"
-}
-```
-
----
-
-## Actualizar Anime
-
-### PUT /api/animes/:id
-
-### Response
-
-```json
-{
-  "message": "Anime actualizado"
-}
-```
-
----
-
-## Eliminar Anime
-
-### DELETE /api/animes/:id
-
-### Response
-
-```json
-{
-  "message": "Anime eliminado"
 }
 ```
 
@@ -477,34 +439,22 @@ Destruye la sesión en el servidor (`req.session.destroy()`) y limpia la cookie.
 ### Response
 
 ```json
-[
-  {
-    "id": 1,
-    "malId": 1,
-    "number": 1,
-    "title": "El despertar",
-    "aired": "2024-01-06",
-    "filler": false,
-    "recap": false,
-    "duration": 1440
-  }
-]
-```
-
----
-
-## Crear episodio
-
-### POST /api/episodes
-
-### Request
-
-```json
 {
-  "animeId": 1,
-  "number": 1,
-  "title": "El despertar",
-  "duration": 24
+  "success": true,
+  "data": [
+    {
+      "mal_id": 1,
+      "url": "https://myanimelist.net/anime/20/Naruto/episode/1",
+      "title": "Enter: Naruto Uzumaki!",
+      "title_japanese": "参上！うずまきナルト",
+      "title_romanji": "Sanjou! Uzumaki Naruto ",
+      "aired": "2002-10-03T00:00:00+00:00",
+      "score": 4.13,
+      "filler": false,
+      "recap": false,
+      "forum_url": "https://myanimelist.net/forum/?topicid=99623"
+    }
+  ]
 }
 ```
 
@@ -576,7 +526,7 @@ Internamente: `SELECT ... FROM favorites WHERE user_id = req.session.userId`.
     "id": 10,
     "animeId": 1,
     "title": "Solo Leveling",
-    "imageUrl": "image.jpg",
+    "image_url": "image.jpg",
     "addedAt": "2026-06-22T10:00:00Z"
   }
 ]
@@ -638,7 +588,15 @@ Internamente: `SELECT ... FROM favorites WHERE user_id = req.session.userId`.
 
 ## Obtener comentarios
 
-### GET /api/animes/:id/comments
+### GET /api/animes/comments
+
+### body params
+
+```js
+{
+  "animeId": 1,
+}
+```
 
 Internamente: `JOIN comments c ON c.user_id = users.id WHERE c.anime_id = :id`.
 

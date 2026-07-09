@@ -24,8 +24,9 @@ function mapAnime(row: any): Anime {
       genres.push(...row.genres.map((g: any) => (typeof g === 'string' ? g : g.name ?? '')));
     }
   }
+  const jpg = row.images?.jpg ?? {};
   return {
-    id: row.id,
+    id: row.mal_id ?? row.id,
     malId: row.mal_id ?? row.malId,
     title: row.title,
     titleEnglish: row.title_english ?? row.titleEnglish,
@@ -36,8 +37,8 @@ function mapAnime(row: any): Anime {
     episodes: row.episodes,
     status: row.status,
     airing: row.airing,
-    airedFrom: row.aired_from ?? row.airedFrom,
-    airedTo: row.aired_to ?? row.airedTo,
+    airedFrom: row.aired_from ?? row.aired?.from?.split('T')[0] ?? row.airedFrom,
+    airedTo: row.aired_to ?? row.aired?.to?.split('T')[0] ?? row.airedTo,
     duration: row.duration,
     rating: row.rating,
     score: row.score != null ? Number(row.score) : undefined,
@@ -47,8 +48,8 @@ function mapAnime(row: any): Anime {
     members: row.members,
     season: row.season,
     year: row.year,
-    imageUrl: row.image_url ?? row.imageUrl,
-    trailerUrl: row.trailer_url ?? row.trailerUrl,
+    imageUrl: row.image_url ?? jpg.large_image_url ?? jpg.image_url ?? row.imageUrl,
+    trailerUrl: row.trailer_url ?? row.trailer?.url ?? row.trailer?.embed_url ?? row.trailerUrl,
     genres,
   };
 }

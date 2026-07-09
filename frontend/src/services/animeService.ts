@@ -1,150 +1,209 @@
 import type { Anime, User, Episode, Comment, Favorite, PaginatedResponse } from '../types';
 
-const JIKAN_URL = 'https://api.jikan.moe/v4';
+const API_URL = 'http://localhost:5000/api/animes';
 
-async function jikanFetch<T>(path: string): Promise<T> {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const res = await fetch(`${JIKAN_URL}${path}`);
-    if (res.ok) return res.json();
-    if (res.status === 429) {
-      const wait = 1000 * (attempt + 1);
-      console.warn(`Jikan rate limited, retrying in ${wait}ms...`);
-      await new Promise((r) => setTimeout(r, wait));
-      continue;
-    }
-    throw new Error(`Jikan API error: ${res.status}`);
+async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, {
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    ...options,
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Error' }));
+    throw new Error(error.message ?? `HTTP ${res.status}`);
   }
-  throw new Error('Jikan API rate limit exceeded after 3 retries');
+  return res.json();
 }
 
-function mapJikanAnime(item: any): Anime {
+function mapAnime(row: any): Anime {
+  const genres: string[] = [];
+  if (row.genres) {
+    if (typeof row.genres === 'string') {
+      genres.push(...row.genres.split(',').map((g: string) => g.trim()));
+    } else if (Array.isArray(row.genres)) {
+      genres.push(...row.genres.map((g: any) => (typeof g === 'string' ? g : g.name ?? '')));
+    }
+  }
   return {
-    id: item.mal_id,
-    malId: item.mal_id,
-    title: item.title,
-    titleEnglish: item.title_english ?? undefined,
-    titleJapanese: item.title_japanese ?? undefined,
-    synopsis: item.synopsis ?? undefined,
-    type: item.type ?? undefined,
-    source: item.source ?? undefined,
-    episodes: item.episodes ?? undefined,
-    status: item.status ?? undefined,
-    airing: item.airing ?? false,
-    airedFrom: item.aired?.from?.split('T')[0] ?? undefined,
-    airedTo: item.aired?.to?.split('T')[0] ?? undefined,
-    duration: item.duration ?? undefined,
-    rating: item.rating ?? undefined,
-    score: item.score ?? undefined,
-    scoredBy: item.scored_by ?? undefined,
-    rank: item.rank ?? undefined,
-    popularity: item.popularity ?? undefined,
-    members: item.members ?? undefined,
-    season: item.season ?? undefined,
-    year: item.year ?? undefined,
-    imageUrl: item.images?.jpg?.large_image_url ?? item.images?.jpg?.image_url ?? undefined,
-    trailerUrl: item.trailer?.url ?? item.trailer?.embed_url ?? undefined,
-    genres: (item.genres ?? []).map((g: any) => g.name),
+    id: row.id,
+    malId: row.mal_id ?? row.malId,
+    title: row.title,
+    titleEnglish: row.title_english ?? row.titleEnglish,
+    titleJapanese: row.title_japanese ?? row.titleJapanese,
+    synopsis: row.synopsis,
+    type: row.type,
+    source: row.source,
+    episodes: row.episodes,
+    status: row.status,
+    airing: row.airing,
+    airedFrom: row.aired_from ?? row.airedFrom,
+    airedTo: row.aired_to ?? row.airedTo,
+    duration: row.duration,
+    rating: row.rating,
+    score: row.score != null ? Number(row.score) : undefined,
+    scoredBy: row.scored_by ?? row.scoredBy,
+    rank: row.rank,
+    popularity: row.popularity,
+    members: row.members,
+    season: row.season,
+    year: row.year,
+    imageUrl: row.image_url ?? row.imageUrl,
+    trailerUrl: row.trailer_url ?? row.trailerUrl,
+    genres,
+  };
+}
+
+function mapUser(row: any): User {
+  return {
+    id: row.id,
+    name: row.nombre ?? row.name,
+    email: row.gmail ?? row.email,
+    role: row.role ?? 'user',
+    createdAt: row.created_at ?? row.createdAt,
   };
 }
 
 export const animeService = {
   async getAnimes(page = 1, filters?: { genre?: string; year?: number; type?: string }): Promise<PaginatedResponse<Anime>> {
-    const params = new URLSearchParams();
-    params.set('page', String(page));
-    params.set('limit', '25');
+    const params = new URLSearchParams({ page: String(page), limit: '25', order_by: 'scored_by', sort: 'desc' });
     if (filters?.genre) params.set('genres', filters.genre);
     if (filters?.year) params.set('year', String(filters.year));
     if (filters?.type) params.set('type', filters.type);
-
-    const json = await jikanFetch<any>(`/anime?${params.toString()}`);
-    const results = (json.data ?? []).map(mapJikanAnime);
+    const json = await apiFetch<{ success: boolean; data: any[]; pagination?: any }>(`/search?${params}`);
+    const results = (json.data ?? []).map(mapAnime);
     const totalPages = json.pagination?.last_visible_page ?? 1;
     return { page, totalPages, results };
   },
 
   async searchAnimes(query: string, page = 1): Promise<PaginatedResponse<Anime>> {
-    const json = await jikanFetch<any>(`/anime?q=${encodeURIComponent(query)}&page=${page}&limit=25`);
-    const results = (json.data ?? []).map(mapJikanAnime);
+    const json = await apiFetch<{ success: boolean; data: any[]; pagination?: any }>(`/search?q=${encodeURIComponent(query)}&page=${page}`);
+    const results = (json.data ?? []).map(mapAnime);
     const totalPages = json.pagination?.last_visible_page ?? 1;
     return { page, totalPages, results };
   },
 
   async getAnimeById(id: number): Promise<Anime | null> {
     try {
-      const json = await jikanFetch<any>(`/anime/${id}/full`);
-      return mapJikanAnime(json.data);
+      const json = await apiFetch<{ success: boolean; data: any }>(`/${id}`);
+      return mapAnime(json.data);
     } catch {
       return null;
     }
   },
 
   async getGenres(): Promise<{ malId: number; name: string }[]> {
-    const json = await jikanFetch<any>('/genres/anime');
+    const json = await apiFetch<{ success: boolean; data: any[] }>('/genres');
     return (json.data ?? []).map((g: any) => ({ malId: g.mal_id, name: g.name }));
   },
 
   async getEpisodes(animeId: number): Promise<Episode[]> {
     try {
-      const json = await jikanFetch<any>(`/anime/${animeId}/episodes`);
+      const json = await apiFetch<{ success: boolean; data: any[] }>(`/${animeId}/episodes`);
       return (json.data ?? []).map((e: any) => ({
-        id: e.mal_id,
+        id: e.id,
         malId: e.mal_id,
         animeId,
         number: e.number ?? 0,
-        title: e.title ?? undefined,
-        aired: e.aired ?? undefined,
+        title: e.title,
+        aired: e.aired,
         filler: e.filler ?? false,
         recap: e.recap ?? false,
-        duration: e.duration ?? undefined,
+        duration: e.duration,
       }));
     } catch {
       return [];
     }
   },
 
-  // Mock auth — no backend
-  async login(_email: string, _password: string): Promise<User> {
-    await new Promise((r) => setTimeout(r, 800));
-    return { id: 1, name: 'Usuario', email: _email, role: 'user', createdAt: new Date().toISOString() };
+  async login(email: string, password: string): Promise<User> {
+    const json = await apiFetch<{ success: boolean; user: any; message: string }>('/login', {
+      method: 'POST',
+      body: JSON.stringify({ gmail: email, password }),
+    });
+    const user = mapUser(json.user);
+    localStorage.setItem('animegj_user', JSON.stringify(user));
+    return user;
   },
 
-  async register(_name: string, _email: string, _password: string): Promise<{ message: string }> {
-    await new Promise((r) => setTimeout(r, 800));
-    return { message: 'Usuario registrado correctamente' };
+  async register(name: string, email: string, password: string): Promise<{ message: string }> {
+    const json = await apiFetch<{ success: boolean; message: string }>('/register', {
+      method: 'POST',
+      body: JSON.stringify({ nombre: name, gmail: email, password }),
+    });
+    return { message: json.message };
   },
 
   async logout(): Promise<void> {
+    await apiFetch<{ success: boolean; message: string }>('/logout', { method: 'POST' });
     localStorage.removeItem('animegj_user');
   },
 
   async getProfile(): Promise<User> {
-    const stored = localStorage.getItem('animegj_user');
-    if (stored) return JSON.parse(stored);
-    throw new Error('No hay sesión activa');
+    const json = await apiFetch<{ success: boolean; user: any }>('/auth/me');
+    return mapUser(json.user);
   },
 
-  async getComments(_animeId: number): Promise<Comment[]> {
-    return [];
+  async getComments(animeId: number): Promise<Comment[]> {
+    try {
+      const json = await apiFetch<{ success: boolean; data: any[] }>(`/comentarios?mal_id=${animeId}`);
+      return (json.data ?? []).map((c: any) => ({
+        id: c.id,
+        content: c.content ?? c.comentario,
+        createdAt: c.created_at ?? c.createdAt,
+        user: { id: c.user_id ?? c.usuario_id, name: c.nombre ?? c.user_name ?? '' },
+      }));
+    } catch {
+      return [];
+    }
   },
 
-  async addComment(_animeId: number, _content: string): Promise<Comment> {
-    throw new Error('Not implemented');
+  async addComment(animeId: number, content: string): Promise<Comment> {
+    const json = await apiFetch<{ success: boolean; data: any }>('/comentarios', {
+      method: 'POST',
+      body: JSON.stringify({ mal_id: animeId, comment: content }),
+    });
+    const c = json.data;
+    return { id: c.id, content: c.content ?? c.comentario, createdAt: c.created_at, user: { id: c.user_id, name: c.nombre ?? '' } };
   },
 
-  async deleteComment(_commentId: number): Promise<{ message: string }> {
-    throw new Error('Not implemented');
+  async deleteComment(commentId: number): Promise<{ message: string }> {
+    const json = await apiFetch<{ success: boolean; message: string }>(`/comentarios`, {
+      method: 'DELETE',
+      body: JSON.stringify({ comment_id: commentId }),
+    });
+    return { message: json.message };
   },
 
   async getFavorites(): Promise<Favorite[]> {
-    return [];
+    try {
+      const json = await apiFetch<{ success: boolean; data: any[] }>('/favoritos');
+      return (json.data ?? []).map((f: any) => ({
+        id: f.id,
+        animeId: f.anime_id ?? f.mal_id,
+        title: f.title ?? '',
+        imageUrl: f.image_url ?? f.imageUrl,
+        addedAt: f.created_at ?? f.addedAt,
+      }));
+    } catch {
+      return [];
+    }
   },
 
-  async addFavorite(_animeId: number, _animeTitle: string, _animeImage?: string): Promise<Favorite> {
-    throw new Error('Not implemented');
+  async addFavorite(animeId: number, _animeTitle: string, _animeImage?: string): Promise<Favorite> {
+    const json = await apiFetch<{ success: boolean; data: any }>('/favorito', {
+      method: 'POST',
+      body: JSON.stringify({ mal_id: animeId }),
+    });
+    const f = json.data;
+    return { id: f.id, animeId: f.anime_id ?? animeId, title: '', addedAt: f.created_at ?? '' };
   },
 
-  async removeFavorite(_animeId: number): Promise<{ message: string }> {
-    throw new Error('Not implemented');
+  async removeFavorite(animeId: number): Promise<{ message: string }> {
+    const json = await apiFetch<{ success: boolean; message: string }>('/favorito', {
+      method: 'DELETE',
+      body: JSON.stringify({ mal_id: animeId }),
+    });
+    return { message: json.message };
   },
 
   async getHistory(): Promise<any[]> {

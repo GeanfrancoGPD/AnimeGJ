@@ -84,7 +84,7 @@ export default class AnimeRepository {
 
   async getEpisodesDetails(animeId) {
     return await this.db.executeNameQuery("getEpisodesDetails", {
-      mal_id: animeId,
+      animeId: animeId,
     });
   }
 
@@ -92,8 +92,8 @@ export default class AnimeRepository {
     for (const episode of episodes) {
       const episodeData = {
         mal_id: episode.mal_id,
-        anime_id: Number(animeId),
-        number: episode.mal_id, // o i + 1
+        anime_id: Number(animeId), // Ahora esto es el mal_id y la BD lo aceptará felizmente
+        number: episode.number ?? episode.mal_id, // Un pequeño tip abajo sobre esto
         title: episode.title,
         title_japanese: episode.title_japanese,
         title_romanji: episode.title_romanji,
@@ -109,21 +109,21 @@ export default class AnimeRepository {
   async getFavoriteByUserAndAnime(usuarioId, animeId) {
     return await this.db.executeNameQuery("getFavoriteByUserAndAnime", {
       usuario_id: usuarioId,
-      anime_id: animeId,
+      mal_id: animeId,
     });
   }
 
   async addFavorite(usuarioId, animeId) {
     return await this.db.executeNameQuery("addFavorite", {
       usuario_id: usuarioId,
-      anime_id: animeId,
+      mal_id: animeId,
     });
   }
 
   async removeFavorite(usuarioId, animeId) {
     return await this.db.executeNameQuery("removeFavorite", {
       usuario_id: usuarioId,
-      anime_id: animeId,
+      mal_id: animeId,
     });
   }
 
@@ -136,21 +136,21 @@ export default class AnimeRepository {
   async addComment(usuarioId, animeId, comentario) {
     return await this.db.executeNameQuery("addComment", {
       usuario_id: usuarioId,
-      anime_id: animeId,
+      mal_id: animeId,
       comentario: comentario,
     });
   }
 
   async getCommentsByAnime(animeId) {
     return await this.db.executeNameQuery("getCommentsByAnime", {
-      anime_id: animeId,
+      mal_id: animeId,
     });
   }
 
   async removeComment(usuarioId, animeId, commentId) {
     return await this.db.executeNameQuery("removeComment", {
       usuario_id: usuarioId,
-      anime_id: animeId,
+      mal_id: animeId,
       comment_id: commentId,
     });
   }

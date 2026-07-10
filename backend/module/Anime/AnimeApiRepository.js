@@ -62,7 +62,11 @@ export default class AnimeApiRepository {
         pagination: response.data?.pagination || {},
       };
     } catch (error) {
-      throw new Error(`Error buscando animes en Jikan: ${error.message}`);
+      console.error("Status:", error.response?.status);
+      console.error("Data:", error.response?.data);
+      console.error("Message:", error.message);
+
+      throw error;
     }
   }
 

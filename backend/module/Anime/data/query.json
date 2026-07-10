@@ -152,11 +152,11 @@
   },
 
   "getEpisodesDetails": {
-    "query": "SELECT id, mal_id, anime_id, number, title, title_japanese, title_romanji, aired, filler, recap, duration FROM episodes WHERE mal_id = $1 ORDER BY number ASC",
+    "query": "SELECT id, mal_id, anime_id, number, title, title_japanese, title_romanji, aired, filler, recap, duration FROM episodes WHERE anime_id = $1 ORDER BY number ASC",
     "structure_params": {
-      "mal_id": "number"
+      "animeId": "number"
     },
-    "orderArray": ["mal_id"]
+    "orderArray": ["animeId"]
   },
   "createEpisode": {
     "query": "INSERT INTO episodes (mal_id, anime_id, number, title, title_japanese, title_romanji, aired, filler, recap, duration) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, mal_id, anime_id, number, title, title_japanese, title_romanji, aired, filler, recap, duration",
@@ -186,28 +186,28 @@
     ]
   },
   "getFavoriteByUserAndAnime": {
-    "query": "SELECT * FROM favorites WHERE user_id = $1 AND anime_id = $2",
+    "query": "SELECT * FROM favorites WHERE user_id = $1 AND mal_id = $2",
     "structure_params": {
       "user_id": "number",
-      "anime_id": "number"
+      "mal_id": "number"
     },
-    "orderArray": ["user_id", "anime_id"]
+    "orderArray": ["user_id", "mal_id"]
   },
   "addFavorite": {
-    "query": "INSERT INTO favorites (user_id, anime_id) VALUES ($1, $2) RETURNING id, user_id, anime_id",
+    "query": "INSERT INTO favorites (user_id, mal_id) VALUES ($1, $2) RETURNING id, user_id, mal_id",
     "structure_params": {
       "user_id": "number",
-      "anime_id": "number"
+      "mal_id": "number"
     },
-    "orderArray": ["user_id", "anime_id"]
+    "orderArray": ["user_id", "mal_id"]
   },
   "removeFavorite": {
-    "query": "DELETE FROM favorites WHERE user_id = $1 AND anime_id = $2 RETURNING id, user_id, anime_id",
+    "query": "DELETE FROM favorites WHERE user_id = $1 AND mal_id = $2 RETURNING id, user_id, mal_id",
     "structure_params": {
       "user_id": "number",
-      "anime_id": "number"
+      "mal_id": "number"
     },
-    "orderArray": ["user_id", "anime_id"]
+    "orderArray": ["user_id", "mal_id"]
   },
   "getFavoriteAnimesByUser": {
     "query": "SELECT a.* FROM animes a JOIN favorites f ON a.mal_id = f.anime_id WHERE f.user_id = $1",
@@ -217,20 +217,20 @@
     "orderArray": ["user_id"]
   },
   "addComment": {
-    "query": "INSERT INTO comments (user_id, anime_id, comment_text) VALUES ($1, $2, $3) RETURNING id, user_id, anime_id, comment_text",
+    "query": "INSERT INTO comments (user_id, mal_id, comment_text) VALUES ($1, $2, $3) RETURNING id, user_id, mal_id, comment_text",
     "structure_params": {
       "user_id": "number",
-      "anime_id": "number",
+      "mal_id": "number",
       "comment_text": "string"
     },
-    "orderArray": ["user_id", "anime_id", "comment_text"]
+    "orderArray": ["user_id", "mal_id", "comment_text"]
   },
   "getCommentsByAnime": {
-    "query": "SELECT c.id, c.user_id, u.name AS user_name, c.anime_id, c.comment_text, c.created_at FROM comments c JOIN users u ON c.user_id = u.id WHERE c.anime_id = $1 ORDER BY c.created_at DESC",
+    "query": "SELECT c.id, c.user_id, u.name AS user_name, c.anime_id, c.comment_text, c.created_at FROM comments c JOIN users u ON c.user_id = u.id WHERE c.mal_id = $1 ORDER BY c.created_at DESC",
     "structure_params": {
-      "anime_id": "number"
+      "mal_id": "number"
     },
-    "orderArray": ["anime_id"]
+    "orderArray": ["mal_id"]
   },
   "removeComment": {
     "query": "DELETE FROM comments WHERE id = $1 AND user_id = $2 RETURNING id, user_id, anime_id, comment_text",

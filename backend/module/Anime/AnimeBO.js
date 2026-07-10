@@ -183,23 +183,55 @@ export default class AnimeBO {
 
   async getAnimeAll(req, res) {
     try {
+      // 1. Intentar sincronizar de forma segura
       const apiAnimes = await this.apiRepository.getPopularAnimes();
 
-      for (const anime of apiAnimes) {
-        const mapped = await this.maperAnimeData(anime);
+      if (apiAnimes && apiAnimes.length > 0) {
+        // Usamos Promise.all para procesar en paralelo o mapear sin bloquear el hilo principal
+        const mappingPromises = apiAnimes.map(async (anime) => {
+          try {
+            const mapped = await this.maperAnimeData(anime);
+            await this.repository.createAnime(mapped);
+          } catch (insertError) {
+            // Si un anime individual falla (por ejemplo, duplicado), el bucle no se cae
+            console.error(
+              `Error guardando anime individual: ${anime.title}`,
+              insertError.message,
+            );
+          }
+        });
 
-        await this.repository.createAnime(mapped);
+        // Esperamos que terminen todas las inserciones concurrentes
+        await Promise.all(mappingPromises);
       }
     } catch (error) {
-      console.log("No se pudo sincronizar con Jikan");
+      // Si Jikan da un 429 o cae, el backend avisa pero NO rompe el flujo
+      console.warn(
+        "No se pudo sincronizar con Jikan (Usando datos locales de la BD):",
+        error.message,
+      );
     }
 
-    const animes = await this.repository.getAnimeAll();
+    // 2. Recuperar los datos locales pase lo que pase
+    try {
+      // IMPORTANTE: Verifica que dentro de este método llames a executeNameQuery("getAnimeAll")
+      const animes = await this.repository.getAnimeAll();
 
-    return res.status(200).json({
-      success: true,
-      data: animes,
-    });
+      return res.status(200).json({
+        success: true,
+        count: animes ? animes.length : 0,
+        data: animes || [],
+      });
+    } catch (dbError) {
+      console.error(
+        "Error crítico al consultar la base de datos local:",
+        dbError,
+      );
+      return res.status(500).json({
+        success: false,
+        message: "Error interno al obtener los animes de la base de datos.",
+      });
+    }
   }
 
   async getAnimeById(req, res) {

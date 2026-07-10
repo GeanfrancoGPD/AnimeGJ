@@ -22,27 +22,28 @@ export function AnimeDataProvider({ children }: { children: ReactNode }) {
 
     async function load() {
       try {
-        const [genreData] = await Promise.all([
-          animeService.getGenres(),
-        ]);
+        const genresList = await animeService.getGenres();
         if (cancelled) return;
-        setGenres(genreData);
+        setGenres(genresList);
+
+        // Pequeño retardo después de traer los géneros antes de pedir el primer lote de animes
+        await new Promise((r) => setTimeout(r, 1000));
 
         const all: Anime[] = [];
-        const BATCH_SIZE = 3;
-
-        for (let start = 1; start <= TOTAL_PAGES; start += BATCH_SIZE) {
-          const batch = [];
-          for (let p = start; p < start + BATCH_SIZE && p <= TOTAL_PAGES; p++) {
-            batch.push(animeService.getAnimes(p));
-          }
-          const results = await Promise.all(batch);
+        for (let p = 1; p <= TOTAL_PAGES; p++) {
           if (cancelled) return;
-          for (const r of results) {
+          try {
+            const r = await animeService.getAnimes(p);
+            if (cancelled) return;
             all.push(...r.results);
+            setAnimes([...all]);
+          } catch (pageErr) {
+            console.error(`Error loading page ${p}:`, pageErr);
+            // Si falla una página, intentamos esperar un poco más y continuar en vez de romper toda la carga
+            await new Promise((r) => setTimeout(r, 2000));
           }
-          setAnimes([...all]);
-          if (start + BATCH_SIZE <= TOTAL_PAGES) {
+
+          if (p < TOTAL_PAGES) {
             await new Promise((r) => setTimeout(r, 1000));
           }
         }

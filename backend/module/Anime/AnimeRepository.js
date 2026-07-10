@@ -108,36 +108,36 @@ export default class AnimeRepository {
   // Favoritos
   async getFavoriteByUserAndAnime(usuarioId, animeId) {
     return await this.db.executeNameQuery("getFavoriteByUserAndAnime", {
-      usuario_id: usuarioId,
+      user_id: usuarioId,
       anime_id: animeId,
     });
   }
 
   async addFavorite(usuarioId, animeId) {
     return await this.db.executeNameQuery("addFavorite", {
-      usuario_id: usuarioId,
+      user_id: usuarioId,
       anime_id: animeId,
     });
   }
 
   async removeFavorite(usuarioId, animeId) {
     return await this.db.executeNameQuery("removeFavorite", {
-      usuario_id: usuarioId,
+      user_id: usuarioId,
       anime_id: animeId,
     });
   }
 
   async getFavoriteAnimesByUser(usuarioId) {
     return await this.db.executeNameQuery("getFavoriteAnimesByUser", {
-      usuario_id: usuarioId,
+      user_id: usuarioId,
     });
   }
 
   async addComment(usuarioId, animeId, comentario) {
     return await this.db.executeNameQuery("addComment", {
-      usuario_id: usuarioId,
+      user_id: usuarioId,
       anime_id: animeId,
-      comentario: comentario,
+      comment_text: comentario,
     });
   }
 
@@ -147,11 +147,10 @@ export default class AnimeRepository {
     });
   }
 
-  async removeComment(usuarioId, animeId, commentId) {
+  async removeComment(usuarioId, _animeId, commentId) {
     return await this.db.executeNameQuery("removeComment", {
-      usuario_id: usuarioId,
-      anime_id: animeId,
-      comment_id: commentId,
+      id: commentId,
+      user_id: usuarioId,
     });
   }
 }

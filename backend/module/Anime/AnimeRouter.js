@@ -43,14 +43,7 @@ router.get("/search", async (req, res) => {
   return await animeBO.searchAnimes(req, res);
 });
 
-router.get("/:id", async (req, res) => {
-  return await animeBO.getAnimeById(req, res);
-});
-
-router.get("/:id/episodes", async (req, res) => {
-  return await animeBO.getEpisodeDetails(req, res);
-});
-
+// ==================== FAVORITOS ====================
 router.post("/favorito", authMiddleware, async (req, res) => {
   return await animeBO.addFavorite(req, res);
 });
@@ -63,6 +56,7 @@ router.get("/favoritos", authMiddleware, async (req, res) => {
   return await animeBO.getFavoriteAnimes(req, res);
 });
 
+// ==================== COMENTARIOS ====================
 router.post("/comentarios", authMiddleware, async (req, res) => {
   return await animeBO.addComment(req, res);
 });
@@ -73,6 +67,15 @@ router.delete("/comentarios", authMiddleware, async (req, res) => {
 
 router.get("/comentarios", authMiddleware, async (req, res) => {
   return await animeBO.getComments(req, res);
+});
+
+// ==================== DETALLES DE ANIME ====================
+router.get("/:id", async (req, res) => {
+  return await animeBO.getAnimeById(req, res);
+});
+
+router.get("/:id/episodes", async (req, res) => {
+  return await animeBO.getEpisodeDetails(req, res);
 });
 
 export default router;

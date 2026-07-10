@@ -145,7 +145,7 @@ export default class AnimeBO {
 
     return res.status(200).json({
       success: true,
-      data: currentUser,
+      user: currentUser,
     });
   }
 

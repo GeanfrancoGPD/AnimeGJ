@@ -426,11 +426,12 @@ export default class AnimeBO {
       }
 
       // Agregamos a favoritos
-      await this.repository.addFavorite(userId, mal_id);
+      const favorite = await this.repository.addFavorite(userId, mal_id);
 
       return res.status(201).json({
         success: true,
         message: "Anime agregado a favoritos",
+        data: favorite[0],
       });
     } catch (error) {
       console.error("Error al agregar favorito:", error);
@@ -494,11 +495,12 @@ export default class AnimeBO {
     }
 
     try {
-      await this.repository.addComment(userId, mal_id, comment);
+      const dbComment = await this.repository.addComment(userId, mal_id, comment);
 
       return res.status(201).json({
         success: true,
         message: "Comentario agregado exitosamente",
+        data: dbComment[0],
       });
     } catch (error) {
       console.error("Error al agregar comentario:", error);

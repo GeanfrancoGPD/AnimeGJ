@@ -279,11 +279,23 @@ export default class AnimeBO {
         pagination: pagination,
       });
     } catch (error) {
-      console.error("Error al buscar animes:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Error interno del servidor",
-      });
+      console.error("Error al buscar animes en Jikan, usando caché local:", error.message);
+
+      // Fallback: devolver los animes almacenados en la base de datos local
+      try {
+        const localAnimes = await this.repository.getAnimeAll();
+        return res.status(200).json({
+          success: true,
+          data: localAnimes ?? [],
+          pagination: { last_visible_page: 1, has_next_page: false },
+        });
+      } catch (dbError) {
+        console.error("Error al consultar la base de datos local:", dbError);
+        return res.status(500).json({
+          success: false,
+          message: "Error interno del servidor",
+        });
+      }
     }
   }
 

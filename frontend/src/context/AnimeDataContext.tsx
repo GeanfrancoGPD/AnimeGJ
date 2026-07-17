@@ -35,7 +35,7 @@ export function AnimeDataProvider({ children }: { children: ReactNode }) {
           try {
             const r = await animeService.getAnimes(p);
             if (cancelled) return;
-            all.push(...r.results);
+            all.push(...r.results.filter((a) => !all.some((e) => e.id === a.id)));
             setAnimes([...all]);
           } catch (pageErr) {
             console.error(`Error loading page ${p}:`, pageErr);
